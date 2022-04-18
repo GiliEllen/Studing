@@ -2,21 +2,36 @@ console.log(`Connected!`)
 
 // Get canvas from html
 const canvas = document.getElementById('game') as HTMLCanvasElement;
-const ctx:CanvasRenderingContext2D = canvas.getContext('2d');
+const ctx: CanvasRenderingContext2D = canvas.getContext('2d');
+
+class SnakePart {
+    x: number;
+    y: number;
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+}
 
 // Declared veriables
-let speed = 5; // Define speed of game. ++faster, --slower
+let speed = 7; // Define speed of game. ++faster, --slower
 let tileCount = 20; // Defines size of tile
 let tileSize = canvas.width / tileCount - 2; // Define size of snake = smaller
 let headX = 10; // Defines head of snake X location
 let headY = 10;  // Defines head of snake Y location
+
+const snakeParts = [];
+let tailLength = 2;
 let changeXPosition = 0;  // Var to help reposition snake
 let changeYPosition = 0; // Var to help reposition snake
 
-let moveDirection:number | null = null; // Current moving direction
-let requestedMoveDirection:number | null = null; // Requested moving direction
+let appleX = 5;
+let appleY = 5;
 
-let gameover = false; // Is game over?
+let moveDirection: number | null = null; // Current moving direction
+let requestedMoveDirection: number | null = null; // Requested moving direction
+
+let pointsCounter = 0;
 
 // Object that defines moving directions numbers
 const movingDirection = {
@@ -33,14 +48,46 @@ const movingDirection = {
 //    and get new moving directions from player
 // 4) Checks for collisions - incomplete!
 function gameLoop() {
-    clearScreen();
-    drawSnake();
-    if (!gamePause()) {
-        setMoveDirection();
-        moveSnake();
+    changeSnakePosition();
+    let result = isGameOver();
+    if (result) {
+        ctx.fillStyle = 'red';
+        ctx.font = "50px Verdana";
+        ctx.fillText("Game Over!", canvas.width / 7, canvas.height / 2);
+        ctx.font = "30px Verdana";
+        ctx.fillText(`Your score is: ${pointsCounter}`, canvas.width / 5, canvas.height / 1.5);
+        return;
     }
-    checkCollision();
+    clearScreen();
+
+    checkApplecollision();
+    drawApple();
+    drawSnake();
+
+    checkTailHeadCollision();
+
+    drawScore();
     setTimeout(gameLoop, 1000 / speed)
+}
+
+function isGameOver() {
+    let gameOver = false;
+
+    if (changeXPosition === 0 && changeYPosition === 0) {
+        return false;
+    }
+
+    if (headX < 0 || headX > tileCount - 1 || headY < 0 || headY > tileCount - 1) {
+        gameOver = true;
+    }
+
+    for (let i = 0; i < snakeParts.length; i++) {
+        if (headX === snakeParts[i].x && headY === snakeParts[i].y) {
+            gameOver = true;
+            break;
+        }
+    }
+    return gameOver;
 }
 
 // Function:fill the screen in black rectengle
@@ -51,89 +98,108 @@ function clearScreen() {
 
 // Function: Draw the snake via given location
 function drawSnake() {
+
+    ctx.fillStyle = 'purple';
+    for (let i = 0; i < snakeParts.length; i++) {
+        let part = snakeParts[i];
+        ctx.fillRect(part.x * tileCount, part.y * tileCount, tileSize, tileSize)
+    }
+
+    snakeParts.push(new SnakePart(headX, headY));
+    if (snakeParts.length > tailLength) {
+        snakeParts.shift();
+    }
+
     ctx.fillStyle = 'pink';
     ctx.fillRect(headX * tileCount, headY * tileCount, tileSize, tileSize)
-}
-
-// Function :
-// check for keyboard event;
-// readjust requested moving direction
-// if requested moving direction is either opposite or same, returns
-// if avleble, change the moving direction to requested.
-function setMoveDirection() {
-    addEventListener('keydown', ev => {
-        ev.preventDefault();
-        if (ev.key === "ArrowUp") {
-            requestedMoveDirection = movingDirection.up;
-            if (moveDirection === requestedMoveDirection || 
-                moveDirection === movingDirection.down) { return; }
-            else {
-                moveDirection = requestedMoveDirection;
-            }
-        } else if (ev.key === "ArrowRight") {
-            requestedMoveDirection = movingDirection.right;
-            if (moveDirection === requestedMoveDirection || 
-                moveDirection === movingDirection.left) { return; }
-            else {
-                moveDirection = requestedMoveDirection;
-            }
-        } else if (ev.key === "ArrowDown") {
-            requestedMoveDirection = movingDirection.down;
-            if (moveDirection === requestedMoveDirection || 
-                moveDirection === movingDirection.up){ return; }
-            else {
-                moveDirection = requestedMoveDirection;
-            }
-        } else if (ev.key === "ArrowLeft") {
-            requestedMoveDirection = movingDirection.left;
-            if (moveDirection === requestedMoveDirection || 
-                moveDirection === movingDirection.right) { return; }
-            else {
-                moveDirection = requestedMoveDirection;
-            }
-        }
-    })
 }
 
 // Function:
 // Checks moving direction
 // Changes X or Y acordenly
-function moveSnake() {
+
+function changeSnakePosition() {
     headX = headX + changeXPosition;
     headY = headY + changeYPosition;
-    if (moveDirection === movingDirection.right) {
-        changeXPosition = 1;
-        changeYPosition = 0;
+}
+
+document.body.addEventListener('keydown', moveSnake);
+function moveSnake(event) {
+
+    if (event.key === 'ArrowRight') {
+        if (changeXPosition === -1) {
+            return;
+        } else {
+            changeXPosition = 1;
+            changeYPosition = 0;
+        }
     }
-    else if (moveDirection === movingDirection.left) {
-        changeXPosition = -1;
-        changeYPosition = 0;
+    else if (event.key === 'ArrowLeft') {
+        if (changeXPosition === 1) {
+            return;
+        } else {
+            changeXPosition = -1;
+            changeYPosition = 0;
+        }
     }
-    else if (moveDirection === movingDirection.up) {
-        changeYPosition = -1;
-        changeXPosition = 0;
+    else if (event.key === 'ArrowUp') {
+        if (changeYPosition === 1) {
+            return;
+        } else {
+            changeYPosition = -1;
+            changeXPosition = 0;
+        }
     }
-    else if (moveDirection === movingDirection.down) {
-        changeYPosition = 1;
-        changeXPosition = 0;
+    else if (event.key === 'ArrowDown') {
+        if (changeYPosition === -1) {
+            return;
+        } else {
+            changeYPosition = 1;
+            changeXPosition = 0;
+        }
+    }
+
+}
+
+function drawApple() {
+    ctx.fillStyle = "red";
+    ctx.fillRect(appleX * tileCount, appleY * tileCount, tileSize, tileSize)
+}
+
+function checkApplecollision() {
+    if (appleX === headX && appleY === headY) {
+        pointsCounter++;
+        appleX = randomNumber(0, tileCount);
+        appleY = randomNumber(0, tileCount);
+
+        snakeParts.forEach(part => {
+            if (part.x === appleX && part.y === appleY) {
+                appleX = randomNumber(0, tileCount);
+                appleY = randomNumber(0, tileCount);
+            }
+        });
+
+        tailLength++;
     }
 }
 
-// Function: 
-// Checks if game is over 
-// If false, returns it
-// if true, return it
-// Incomplete!!
-function gamePause() {
-    if (gameover === false) {
-        return false;
-    } else if (gameover === true) {
-        return true;
-    }
-}
-// Incomplete Function!
-function checkCollision() {
+function checkTailHeadCollision() {
 
+}
+
+function randomNumber(min, max) {
+    return Math.floor(Math.random() * (max + min) - min)
+}
+
+function addTail() {
+    ctx.fillStyle = "purple";
+    ctx.fillRect(headX * (tileCount - 1), headY * (tileCount - 1), tileSize, tileSize)
+}
+
+function drawScore() {
+    ctx.fillStyle = 'white';
+    ctx.font = "10px Verdana"
+    ctx.fillText(`Score is ${pointsCounter}`, canvas.width - 100, 10)
 }
 
 // Run the game
