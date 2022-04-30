@@ -18,7 +18,8 @@ var MarkMiller = {
     calcBMI: function () {
         this.bmi = (this.mass) / (Math.pow(this.height, 2));
         return this.bmi;
-    }
+    },
+    bmi: 0
 };
 var JohnSmith = {
     fullName: 'John Smith',
@@ -27,7 +28,8 @@ var JohnSmith = {
     calcBMI: function () {
         this.bmi = (this.mass) / (Math.pow(this.height, 2));
         return this.bmi;
-    }
+    },
+    bmi: 0
 };
 MarkMiller.calcBMI();
 JohnSmith.calcBMI();

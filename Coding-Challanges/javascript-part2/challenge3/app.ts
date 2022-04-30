@@ -12,8 +12,16 @@
 // Test data: Marks weights 78 kg and is 1.69 m tall. John weights 92 kg and is 1.95 m 
 // tall.
 
+ interface Person {
+	fullName: string,
+	mass: number,
+	height: number,
+	calcBMI: Function,
+	bmi: number
+}
 
-const MarkMiller = {
+
+const MarkMiller:Person = {
 	fullName: 'Mark Miller',
 	mass: 78,
 	height: 1.69,
@@ -21,8 +29,9 @@ const MarkMiller = {
 		this.bmi = (this.mass)/(this.height**2);
 		return this.bmi;
 	},
+	bmi:0
 }
-const JohnSmith = {
+const JohnSmith:Person = {
 	fullName: 'John Smith',
 	mass: 92,
 	height: 1.95,
@@ -30,6 +39,7 @@ const JohnSmith = {
 		this.bmi = (this.mass)/(this.height**2);
 		return this.bmi;
 	},
+	bmi:0
 }
 
 MarkMiller.calcBMI();
